@@ -1,52 +1,299 @@
-# booktracker
+# BookTracker
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-[![CI](https://github.com/maybeanerd/booktracker/workflows/CI/badge.svg)](https://github.com/maybeanerd/booktracker/actions/workflows/ci.yml)
-[![Lint](https://github.com/maybeanerd/booktracker/workflows/Lint/badge.svg)](https://github.com/maybeanerd/booktracker/actions/workflows/lint.yml)
-[![Release](https://github.com/maybeanerd/booktracker/workflows/Release/badge.svg)](https://github.com/maybeanerd/booktracker/actions/workflows/release.yml)
+A modern book tracking application built with Tauri, Nuxt, and NestJS.
 
-A multi-platform app to track your book reading journey, built with Nuxt 4 and Tauri 2.
+## 📁 Project Structure
 
-## Tech Stack
+This is a pnpm monorepo containing:
 
-- **Frontend**: Nuxt
-- **Client Backend**: Tauri
-- **Backend** Nest.js (TODO)
+- **`apps/frontend`** - Tauri application with Nuxt
+- **`apps/backend`** - NestJS REST API with Drizzle ORM
 
-## Getting Started
+```
+booktracker/
+├── apps/
+│   ├── frontend/           # Tauri + Nuxt app
+│   │   ├── src-tauri/      # Rust backend for Tauri
+│   │   ├── pages/          # Nuxt pages
+│   │   ├── components/     # Vue components
+│   │   └── nuxt.config.ts  # Nuxt configuration
+│   └── backend/            # NestJS API
+│       ├── src/            # Source code
+│       ├── drizzle/        # Database migrations
+│       └── Dockerfile      # Container definition
+├── .github/workflows/      # CI/CD pipelines
+├── docker-compose.yml      # Local development setup
+├── pnpm-workspace.yaml     # Monorepo configuration
+└── package.json            # Root scripts
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Node.js**: 24.11.0 (install via [nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
-- **Rust**: Latest stable (install from [rustup.rs](https://rustup.rs/))
+- [Node.js](https://nodejs.org/) (version specified in `.nvmrc`)
+- [pnpm](https://pnpm.io/) (version specified in `package.json`)
+- [Rust](https://www.rust-lang.org/) (for Tauri)
+- [PostgreSQL](https://www.postgresql.org/) (or use Docker Compose)
 
-### Setup
+### Installation
 
-1. **Enable Corepack** (one-time setup):
+1. **Clone the repository**
    ```bash
-   corepack enable
+   git clone https://github.com/yourusername/booktracker.git
+   cd booktracker
    ```
-   
-   This ensures you use the correct pnpm version (`10.11.0`) specified in `package.json`.
 
-2. **Install dependencies**:
+2. **Install dependencies**
    ```bash
    pnpm install
    ```
 
-3. **Run the app**:
-   ```bash
-   # Full app (Tauri + Nuxt)
-   pnpm tauri:dev
+3. **Set up the database**
    
-   # Frontend only (for UI development)
-   pnpm dev
+   Using Docker:
+   ```bash
+   docker-compose up -d postgres
    ```
+   
+   Or install PostgreSQL locally and create a database named `booktracker`.
 
-## Building
+4. **Configure backend environment**
+   
+   Copy the example environment file:
+   ```bash
+   cp apps/backend/env.example apps/backend/.env
+   ```
+   
+   Edit `apps/backend/.env` with your database credentials.
 
+5. **Run database migrations**
+   
+   For local development:
+   ```bash
+   pnpm db:migrate
+   ```
+   
+   Note: When using Docker, migrations run automatically on container startup.
+
+### Development
+
+**Run everything in parallel:**
 ```bash
-# Build for production
-pnpm tauri:build
+pnpm dev
 ```
 
-This will create platform-specific installers in `src-tauri/target/release/bundle/`.
+**Or run individually:**
+
+- **Frontend (Tauri app):**
+  ```bash
+  pnpm dev:frontend
+  ```
+
+- **Backend (NestJS):**
+  ```bash
+  pnpm dev:backend
+  ```
+
+- **Database Studio:**
+  ```bash
+  pnpm db:studio
+  ```
+
+#### ❄️ Nix Flake
+
+This project includes a Nix flake for a reproducible development environment.
+
+To enter the Nix shell:
+```bash
+nix develop
+```
+
+This will drop you in a Bash shell with Node, Pnpm, Rust & Tauri.
+
+You can also use direnv to automatically enter the Nix shell when you `cd` into the project. (More info: https://direnv.net/)
+
+## 🏗️ Building
+
+### Frontend (Tauri App)
+
+```bash
+# Build the app for your current platform
+pnpm build:frontend
+
+# The frontend build script runs: tauri build
+# Which includes building Nuxt and bundling the app
+```
+
+### Backend (API)
+
+```bash
+# Build the NestJS app
+pnpm build:backend
+
+# Build Docker image
+docker build -t booktracker-backend ./apps/backend
+```
+
+## 🧪 Testing
+
+### Frontend
+```bash
+# Run Rust tests
+pnpm test:rust
+```
+
+### Backend
+```bash
+# Run unit tests
+pnpm test:backend
+
+# Run e2e tests
+pnpm test:backend:e2e
+```
+
+## 🗄️ Database
+
+This project uses [Drizzle ORM](https://orm.drizzle.team/) for database management.
+
+### Common Commands
+
+```bash
+# Generate new migration
+pnpm db:generate
+
+# Run migrations
+pnpm db:migrate
+
+# Open Drizzle Studio
+pnpm db:studio
+```
+
+### Schema
+
+The database schema is defined in `apps/backend/src/db/schema.ts`.
+
+## 🐳 Docker
+
+### Local Development with Docker Compose
+
+```bash
+# Start PostgreSQL + Backend
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Backend Docker Image
+
+The backend Dockerfile uses Node.js slim image and pnpm monorepo support for efficient builds.
+
+```bash
+# Build (context is repo root, not apps/backend)
+docker build -f apps/backend/Dockerfile -t booktracker-backend .
+
+# Run
+docker run -p 3001:3001 \
+  -e DATABASE_URL="postgresql://user:pass@host:5432/db" \
+  booktracker-backend
+```
+
+## 📝 Scripts Reference
+
+### Root-level commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Run frontend and backend in parallel |
+| `pnpm build` | Build all apps |
+| `pnpm typecheck` | Type check all packages |
+
+### Frontend commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev:frontend` | Run Tauri app in dev mode |
+| `pnpm build:frontend` | Build Tauri app for production |
+| `pnpm format:rust` | Format Rust code |
+| `pnpm lint:rust` | Lint Rust code |
+| `pnpm test:rust` | Run Rust tests |
+
+### Backend commands
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev:backend` | Run NestJS in watch mode |
+| `pnpm build:backend` | Build NestJS for production |
+| `pnpm lint:backend` | Lint backend code |
+| `pnpm test:backend` | Run backend tests |
+| `pnpm test:backend:e2e` | Run backend e2e tests |
+| `pnpm db:generate` | Generate DB migration |
+| `pnpm db:migrate` | Run DB migrations |
+| `pnpm db:studio` | Open Drizzle Studio |
+
+## 🔧 CI/CD
+
+The project includes several GitHub Actions workflows:
+
+- **`build.yml`** - Builds frontend and backend on PR/push
+- **`lint.yml`** - Runs linting and type checking
+- **`release.yml`** - Creates Tauri releases for all platforms
+- **`docker.yml`** - Builds and pushes backend Docker image
+- **`updater.yml`** - Generates Tauri updater JSON
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **[Tauri](https://tauri.app/)** - Cross-platform app framework
+- **[Nuxt](https://nuxt.com/)** - Vue.js framework
+- **[Vue](https://vuejs.org/)** - Progressive JavaScript framework
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+
+### Backend
+- **[NestJS](https://nestjs.com/)** - Progressive Node.js framework
+- **[Drizzle ORM](https://orm.drizzle.team/)** - TypeScript ORM
+- **[PostgreSQL](https://www.postgresql.org/)** - Relational database
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript
+
+### Tools
+- **[pnpm](https://pnpm.io/)** - Fast, disk space efficient package manager
+- **[Docker](https://www.docker.com/)** - Containerization
+- **[GitHub Actions](https://github.com/features/actions)** - CI/CD
+
+## 📄 License
+
+[AGPL-3.0](LICENSE)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request, open an issue with feature requests or bug report, or provide feedback on anything you feel strongly about.
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://diluz.io"><img src="https://avatars.githubusercontent.com/u/18548570?v=4?s=100" width="100px;" alt="Sebastian Di Luzio"/><br /><sub><b>Sebastian Di Luzio</b></sub></a><br /><a href="https://github.com/maybeanerd/booktracker/commits?author=maybeanerd" title="Code">💻</a> <a href="https://github.com/maybeanerd/booktracker/commits?author=maybeanerd" title="Documentation">📖</a> <a href="#tool-maybeanerd" title="Tools">🔧</a> <a href="#maintenance-maybeanerd" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/tiborpilz"><img src="https://avatars.githubusercontent.com/u/915045?v=4?s=100" width="100px;" alt="Tibor Pilz"/><br /><sub><b>Tibor Pilz</b></sub></a><br /><a href="https://github.com/maybeanerd/booktracker/commits?author=tiborpilz" title="Code">💻</a> <a href="https://github.com/maybeanerd/booktracker/commits?author=tiborpilz" title="Documentation">📖</a> <a href="#tool-tiborpilz" title="Tools">🔧</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
